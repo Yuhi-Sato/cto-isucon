@@ -24,7 +24,6 @@ import (
 	gsm "github.com/bradleypeabody/gorilla-sessions-memcache"
 	"github.com/coocood/freecache"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
@@ -496,35 +495,23 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 
 	commentedCount := 0
 	if postCount > 0 {
-		query, args, err := sqlx.In("SELECT COUNT(*) AS count FROM `comments` WHERE `post_id` IN (?)", postIDs)
+		s := []string{}
+		for range postIDs {
+			s = append(s, "?")
+		}
+		placeholder := strings.Join(s, ", ")
+
+		// convert []int -> []interface{}
+		args := make([]interface{}, len(postIDs))
+		for i, v := range postIDs {
+			args[i] = v
+		}
+
+		err = db.Get(&commentedCount, "SELECT COUNT(*) AS count FROM `comments` WHERE `post_id` IN ("+placeholder+")", args...)
 		if err != nil {
 			log.Print(err)
 			return
 		}
-		query = db.Rebind(query)
-		err = db.Get(&commentedCount, query, args...)
-		if err != nil {
-			log.Print(err)
-			return
-		}
-
-		// s := []string{}
-		// for range postIDs {
-		// 	s = append(s, "?")
-		// }
-		// placeholder := strings.Join(s, ", ")
-
-		// // convert []int -> []interface{}
-		// args := make([]interface{}, len(postIDs))
-		// for i, v := range postIDs {
-		// 	args[i] = v
-		// }
-
-		// err = db.Get(&commentedCount, "SELECT COUNT(*) AS count FROM `comments` WHERE `post_id` IN ("+placeholder+")", args...)
-		// if err != nil {
-		// 	log.Print(err)
-		// 	return
-		// }
 	}
 
 	me := getSessionUser(r)
@@ -886,16 +873,14 @@ func main() {
 		dbname = "isuconp"
 	}
 
-	// unix domain socket
 	dsn := fmt.Sprintf(
-		"%s:%s@unix(/var/run/mysqld/mysqld.sock)/%s?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true",
+		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true",
 		user,
 		password,
+		host,
+		port,
 		dbname,
 	)
-	cfg := mysql.NewConfig()
-	cfg.Net = "unix"
-	cfg.Addr = "/var/run/mysqld/mysqld.sock"
 
 	db, err = sqlx.Open("mysql", dsn)
 	if err != nil {
@@ -929,17 +914,4 @@ func main() {
 	})
 
 	log.Fatal(http.ListenAndServe(":8080", r))
-
-	// socket_file := "/tmp/app.sock"
-	// os.Remove(socket_file)
-	// l, err := net.Listen("unix", socket_file)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// err = os.Chmod(socket_file, 0777)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// log.Fatal(http.Serve(l, r))
 }

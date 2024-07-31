@@ -18,6 +18,7 @@ import (
 
 	"github.com/bradfitz/gomemcache/memcache"
 	gsm "github.com/bradleypeabody/gorilla-sessions-memcache"
+	"github.com/coocood/freecache"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
@@ -27,6 +28,7 @@ import (
 var (
 	db    *sqlx.DB
 	store *gsm.MemcacheStore
+	cache *freecache.Cache
 )
 
 const (
@@ -183,9 +185,19 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 	var posts []Post
 
 	for _, p := range results {
-		err := db.Get(&p.CommentCount, "SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?", p.ID)
-		if err != nil {
-			return nil, err
+		cacheCommentCountKey := fmt.Sprintf("comment_count_%d", p.ID)
+		b, err := cache.Get([]byte(cacheCommentCountKey))
+		if err == nil {
+			p.CommentCount, _ = strconv.Atoi(string(b))
+		} else {
+			err := db.Get(&p.CommentCount, "SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?", p.ID)
+			if err != nil {
+				return nil, err
+			}
+			err = cache.Set([]byte(cacheCommentCountKey), []byte(strconv.Itoa(p.CommentCount)), 86400)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		query := "SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC"
@@ -211,11 +223,6 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		}
 
 		p.Comments = comments
-
-		// err = db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ?", p.UserID)
-		// if err != nil {
-		// 	return nil, err
-		// }
 
 		if p.User.AccountName == "" {
 			err = db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ?", p.UserID)
@@ -740,6 +747,8 @@ func postComment(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 		return
 	}
+	cacheCommentCountKey := fmt.Sprintf("comment_count_%d", postID)
+	cache.Del([]byte(cacheCommentCountKey))
 
 	http.Redirect(w, r, fmt.Sprintf("/posts/%d", postID), http.StatusFound)
 }
@@ -829,7 +838,7 @@ func main() {
 	}
 
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local",
+		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true",
 		user,
 		password,
 		host,
@@ -842,6 +851,8 @@ func main() {
 		log.Fatalf("Failed to connect to DB: %s.", err.Error())
 	}
 	defer db.Close()
+
+	cache = freecache.NewCache(10 * 1024 * 1024)
 
 	r := chi.NewRouter()
 

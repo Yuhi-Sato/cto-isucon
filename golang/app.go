@@ -51,9 +51,9 @@ type Post struct {
 	Body         string    `db:"body"`
 	Mime         string    `db:"mime"`
 	CreatedAt    time.Time `db:"created_at"`
+	User         User      `db:"users"`
 	CommentCount int
 	Comments     []Comment
-	User         User
 	CSRFToken    string
 }
 
@@ -83,14 +83,14 @@ func dbInitialize() {
 		"DELETE FROM comments WHERE id > 100000",
 		"UPDATE users SET del_flg = 0",
 		"UPDATE users SET del_flg = 1 WHERE id % 50 = 0",
-		"ALTER TABLE `users` ADD INDEX `idx_account_name_del_flg` (`account_name`, `del_flg`)",
-		"ALTER TABLE `comments` ADD INDEX `idx_post_id` (`post_id`)",
-		"ALTER TABLE `comments` ADD INDEX `idx_post_id_created_at` (`post_id`, `created_at` DESC)",
-		"ALTER TABLE `posts` ADD INDEX `idx_user_id_created_at` (`user_id`, `created_at` DESC)",
-		"ALTER TABLE `posts` ADD INDEX `idx_created_at` (`created_at` DESC)",
-		"ALTER TABLE `comments` ADD INDEX `idx_user_id` (`user_id`)",
-		"ALTER TABLE `posts` ADD INDEX `idx_created_at_desc` (`created_at` DESC)",
-		"ALTER TABLE `users` ADD INDEX `idx_authority_del_flg_created_at` (`authority`, `del_flg`, `created_at` DESC)",
+		// "ALTER TABLE `users` ADD INDEX `idx_account_name_del_flg` (`account_name`, `del_flg`)",
+		// "ALTER TABLE `comments` ADD INDEX `idx_post_id` (`post_id`)",
+		// "ALTER TABLE `comments` ADD INDEX `idx_post_id_created_at` (`post_id`, `created_at` DESC)",
+		// "ALTER TABLE `posts` ADD INDEX `idx_user_id_created_at` (`user_id`, `created_at` DESC)",
+		// "ALTER TABLE `posts` ADD INDEX `idx_created_at` (`created_at` DESC)",
+		// "ALTER TABLE `comments` ADD INDEX `idx_user_id` (`user_id`)",
+		// "ALTER TABLE `posts` ADD INDEX `idx_created_at_desc` (`created_at` DESC)",
+		// "ALTER TABLE `users` ADD INDEX `idx_authority_del_flg_created_at` (`authority`, `del_flg`, `created_at` DESC)",
 	}
 
 	for _, sql := range sqls {
@@ -212,9 +212,16 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 
 		p.Comments = comments
 
-		err = db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ?", p.UserID)
-		if err != nil {
-			return nil, err
+		// err = db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ?", p.UserID)
+		// if err != nil {
+		// 	return nil, err
+		// }
+
+		if p.User.AccountName == "" {
+			err = db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ?", p.UserID)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		p.CSRFToken = csrfToken
@@ -393,8 +400,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	me := getSessionUser(r)
 
 	results := []Post{}
-
-	err := db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC")
+	err := db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.`account_name` AS \"users.account_name\" FROM `posts` AS p STRAIGHT_JOIN `users` AS u ON p.user_id = u.id WHERE u.del_flg = 0 ORDER BY `created_at` DESC LIMIT ?", postsPerPage)
 	if err != nil {
 		log.Print(err)
 		return

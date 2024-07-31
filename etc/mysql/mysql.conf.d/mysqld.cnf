@@ -77,10 +77,10 @@ max_binlog_size   = 100M
 # binlog_do_db		= include_database_name
 # binlog_ignore_db	= include_database_name
 
-slow_query_log          = 1
-slow_query_log_file     = /var/log/mysql/mysql-slow.log
-long_query_time = 0
-log-queries-not-using-indexes = 1
+# slow_query_log          = 1
+# slow_query_log_file     = /var/log/mysql/mysql-slow.log
+# long_query_time = 0
+# log-queries-not-using-indexes = 1
 
 skip-log-bin
 skip-innodb-doublewrite

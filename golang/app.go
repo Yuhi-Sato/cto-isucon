@@ -787,6 +787,14 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	getPostsTemplate.Execute(w, posts)
+
+	templateLayout(
+		w,
+		getSessionUser(r),
+		func(w http.ResponseWriter) {
+			templatePosts(w, posts)
+		},
+	)
 }
 
 func getPostsID(w http.ResponseWriter, r *http.Request) {

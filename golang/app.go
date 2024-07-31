@@ -210,7 +210,7 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 				return nil, err
 			}
 		} else {
-			query := "SELECT c.`id`, c.`post_id`, c.`user_id`, c.`comment`, c.`created_at`, u.`account_name` AS \"user.account_name\" FROM `comments` AS c STRAIGHT_JOIN `users` AS u ON c.`user_id` = u.`id` WHERE c.`post_id` = ? ORDER BY c.`created_at` DESC"
+			query := "SELECT c.`id`, c.`post_id`, c.`user_id`, c.`comment`, c.`created_at`, u.`account_name` AS \"users.account_name\" FROM `comments` AS c STRAIGHT_JOIN `users` AS u ON c.`user_id` = u.`id` WHERE c.`post_id` = ? ORDER BY c.`created_at` DESC"
 			if !allComments {
 				query += " LIMIT 3"
 			}
@@ -777,6 +777,13 @@ func postComment(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 		return
 	}
+
+	cacheCommentsKey := fmt.Sprintf("comments_%d_%t", postID, true)
+	cache.Del([]byte(cacheCommentsKey))
+
+	cacheCommentsKey = fmt.Sprintf("comments_%d_%t", postID, false)
+	cache.Del([]byte(cacheCommentsKey))
+
 	cacheCommentCountKey := fmt.Sprintf("comment_count_%d", postID)
 	cache.Del([]byte(cacheCommentCountKey))
 

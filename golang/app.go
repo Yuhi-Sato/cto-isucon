@@ -400,7 +400,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	me := getSessionUser(r)
 
 	results := []Post{}
-	err := db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.`account_name` AS \"users.account_name\" FROM `posts` AS p STRAIGHT_JOIN `users` AS u ON p.user_id = u.id WHERE u.del_flg = 0 ORDER BY `created_at` DESC LIMIT ?", postsPerPage)
+	err := db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.`account_name` AS \"users.account_name\" FROM `posts` AS p STRAIGHT_JOIN `users` AS u ON p.user_id = u.id WHERE u.del_flg = 0 ORDER BY p.`created_at` DESC LIMIT ?", postsPerPage)
 	if err != nil {
 		log.Print(err)
 		return

@@ -1,0 +1,7 @@
+php
+nodejs
+python
+ruby
+perl
+/tool-config/alp/notify-slack.toml
+/tool-config/slow-query/notify-slack.toml

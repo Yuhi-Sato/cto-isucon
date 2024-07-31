@@ -886,6 +886,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %s.", err.Error())
 	}
+	db.SetMaxOpenConns(100)
+	db.SetMaxIdleConns(100)
 	defer db.Close()
 
 	cache = freecache.NewCache(10 * 1024 * 1024)

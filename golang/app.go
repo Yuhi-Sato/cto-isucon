@@ -35,7 +35,7 @@ var (
 	cache *freecache.Cache
 	// getIndexTemplate   *template.Template
 	getPostsIDTemplate *template.Template
-	getPostsTemplate   *template.Template
+	// getPostsTemplate   *template.Template
 )
 
 const (
@@ -99,10 +99,10 @@ func init() {
 		getTemplPath("post_id.html"),
 		getTemplPath("post.html"),
 	))
-	getPostsTemplate = template.Must(template.New("posts.html").Funcs(fmap).ParseFiles(
-		getTemplPath("posts.html"),
-		getTemplPath("post.html"),
-	))
+	// getPostsTemplate = template.Must(template.New("posts.html").Funcs(fmap).ParseFiles(
+	// 	getTemplPath("posts.html"),
+	// 	getTemplPath("post.html"),
+	// ))
 }
 
 func dbInitialize() {
@@ -785,8 +785,6 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-
-	getPostsTemplate.Execute(w, posts)
 
 	templateLayout(
 		w,

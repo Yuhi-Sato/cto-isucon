@@ -24,6 +24,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/coocood/freecache"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
@@ -1091,14 +1092,25 @@ func main() {
 		dbname = "isuconp"
 	}
 
+	// dsn := fmt.Sprintf(
+	// 	"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true",
+	// 	user,
+	// 	password,
+	// 	host,
+	// 	port,
+	// 	dbname,
+	// )
+
+	// unix domain socket
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true",
+		"%s:%s@unix(/var/run/mysqld/mysqld.sock)/%s?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true",
 		user,
 		password,
-		host,
-		port,
 		dbname,
 	)
+	cfg := mysql.NewConfig()
+	cfg.Net = "unix"
+	cfg.Addr = "/var/run/mysqld/mysqld.sock"
 
 	db, err = sqlx.Open("mysql", dsn)
 	if err != nil {

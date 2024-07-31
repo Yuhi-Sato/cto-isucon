@@ -712,13 +712,18 @@ func getImage(w http.ResponseWriter, r *http.Request) {
 		ext == "png" && post.Mime == "image/png" ||
 		ext == "gif" && post.Mime == "image/gif" {
 		w.Header().Set("Content-Type", post.Mime)
-		_, err := w.Write(post.Imgdata)
-		if err != nil {
-			log.Print(err)
-			return
-		}
+		// _, err := w.Write(post.Imgdata)
+		// if err != nil {
+		// 	log.Print(err)
+		// 	return
+		// }
 		return
 	}
+
+	filename := fmt.Sprintf("../public/image/%d.%s", pid, ext)
+	os.WriteFile(filename, post.Imgdata, 0644)
+
+	w.Header().Set("X-Accel-Redirect", filename)
 
 	w.WriteHeader(http.StatusNotFound)
 }

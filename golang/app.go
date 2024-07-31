@@ -288,9 +288,7 @@ func templateIndex(w http.ResponseWriter, posts []Post, csrfToken string, flash 
 		w.Write(templateIndexByteArray[3])
 	}
 	w.Write(templateIndexByteArray[4])
-	for _, p := range posts {
-		templatePosts(w, []Post{p})
-	}
+	templatePosts(w, posts)
 	w.Write(templateIndexByteArray[5])
 }
 

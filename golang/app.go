@@ -106,9 +106,31 @@ func dbInitialize() {
 
 func tryLogin(accountName, password string) *User {
 	u := User{}
-	err := db.Get(&u, "SELECT * FROM users WHERE account_name = ? AND del_flg = 0", accountName)
-	if err != nil {
-		return nil
+	cacheUserKey := fmt.Sprintf("user_%s", accountName)
+	b, err := cache.Get([]byte(cacheUserKey))
+	if err == nil {
+		err = json.Unmarshal(b, &u)
+		if err != nil {
+			log.Print(err)
+			return nil
+		}
+	} else {
+		err := db.Get(&u, "SELECT * FROM `users` WHERE `account_name` = ? AND `del_flg` = 0", accountName)
+		if err != nil {
+			return nil
+		}
+
+		b, err = json.Marshal(u)
+		if err != nil {
+			log.Print(err)
+			return nil
+		}
+
+		err = cache.Set([]byte(cacheUserKey), b, 86400)
+		if err != nil {
+			log.Print(err)
+			return nil
+		}
 	}
 
 	if calculatePasshash(u.AccountName, password) == u.Passhash {
@@ -222,13 +244,6 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 				return nil, err
 			}
 		}
-
-		// for i := 0; i < len(comments); i++ {
-		// 	err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ?", comments[i].UserID)
-		// 	if err != nil {
-		// 		return nil, err
-		// 	}
-		// }
 
 		// reverse
 		for i, j := 0, len(comments)-1; i < j; i, j = i+1, j-1 {
@@ -393,6 +408,8 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 		return
 	}
+	cacheUserKey := fmt.Sprintf("user_%s", accountName)
+	cache.Del([]byte(cacheUserKey))
 
 	session := getSession(r)
 	uid, err := result.LastInsertId()
@@ -452,11 +469,26 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 func getAccountName(w http.ResponseWriter, r *http.Request) {
 	accountName := r.PathValue("accountName")
 	user := User{}
-
-	err := db.Get(&user, "SELECT * FROM `users` WHERE `account_name` = ? AND `del_flg` = 0", accountName)
-	if err != nil {
-		log.Print(err)
-		return
+	cacheUserKey := fmt.Sprintf("user_%s", accountName)
+	b, err := cache.Get([]byte(cacheUserKey))
+	if err == nil {
+		err = json.Unmarshal(b, &user)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+	} else {
+		err := db.Get(&user, "SELECT * FROM `users` WHERE `account_name` = ? AND `del_flg` = 0", accountName)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		b, err = json.Marshal(user)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		cache.Set([]byte(cacheUserKey), b, 86400)
 	}
 
 	if user.ID == 0 {

@@ -30,10 +30,10 @@ import (
 )
 
 var (
-	db                 *sqlx.DB
-	store              *gsm.MemcacheStore
-	cache              *freecache.Cache
-	getIndexTemplate   *template.Template
+	db    *sqlx.DB
+	store *gsm.MemcacheStore
+	cache *freecache.Cache
+	// getIndexTemplate   *template.Template
 	getPostsIDTemplate *template.Template
 	getPostsTemplate   *template.Template
 )
@@ -88,12 +88,12 @@ func init() {
 		"imageURL": imageURL,
 	}
 
-	getIndexTemplate = template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("index.html"),
-		getTemplPath("posts.html"),
-		getTemplPath("post.html"),
-	))
+	// getIndexTemplate = template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
+	// 	getTemplPath("layout.html"),
+	// 	getTemplPath("index.html"),
+	// 	getTemplPath("posts.html"),
+	// 	getTemplPath("post.html"),
+	// ))
 	getPostsIDTemplate = template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
 		getTemplPath("layout.html"),
 		getTemplPath("post_id.html"),
@@ -127,61 +127,172 @@ func dbInitialize() {
 	}
 }
 
-// var templateLayoutByteArray = [...][]byte{
-// 	[]byte(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Iscogram</title><link href="/css/style.css" media="screen" rel="stylesheet" type="text/css"></head><body><div class="container"><div class="header"><div class="isu-title"><h1><a href="/">Iscogram</a></h1></div><div class="isu-header-menu">`),
-// 	// {{ if eq .Me.ID 0}}
-// 	[]byte(`(<div><a href="/login">ログイン</a></div>`),
-// 	// {{ else }}
-// 	[]byte(`<div><a href="/@`),
-// 	// {{.Me.AccountName}}
-// 	[]byte(`"><span class="isu-account-name">`),
-// 	// {{.Me.AccountName}}
-// 	[]byte(`</span>さん</a></div>`),
-// 	// {{ if eq .Me.Authority 1 }}
-// 	[]byte(`<div><a href="/admin/banned">管理者用ページ</a></div>`),
-// 	// {{ end }}
-// 	[]byte(`<div><a href="/logout">ログアウト</a></div>`),
-// 	// {{ end }}
-// 	[]byte(`</div></div>`),
-// 	// {{ template "content" . }}
-// 	[]byte(`</div><script src="/js/timeago.min.js"></script><script src="/js/main.js"></script></body></html>`),
-// }
+var templateLayoutByteArray = [...][]byte{
+	[]byte(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Iscogram</title><link href="/css/style.css" media="screen" rel="stylesheet" type="text/css"></head><body><div class="container"><div class="header"><div class="isu-title"><h1><a href="/">Iscogram</a></h1></div><div class="isu-header-menu">`),
+	// {{ if eq .Me.ID 0}}
+	[]byte(`(<div><a href="/login">ログイン</a></div>`),
+	// {{ else }}
+	[]byte(`<div><a href="/@`),
+	// {{.Me.AccountName}}
+	[]byte(`"><span class="isu-account-name">`),
+	// {{.Me.AccountName}}
+	[]byte(`</span>さん</a></div>`),
+	// {{ if eq .Me.Authority 1 }}
+	[]byte(`<div><a href="/admin/banned">管理者用ページ</a></div>`),
+	// {{ end }}
+	[]byte(`<div><a href="/logout">ログアウト</a></div>`),
+	// {{ end }}
+	[]byte(`</div></div>`),
+	// {{ template "content" . }}
+	[]byte(`</div><script src="/js/timeago.min.js"></script><script src="/js/main.js"></script></body></html>`),
+}
 
-// func templateLayout(w http.ResponseWriter, me User, content func(w http.ResponseWriter)) {
-// 	w.Write(templateLayoutByteArray[0])
-// 	if me.ID == 0 {
-// 		w.Write(templateLayoutByteArray[1])
-// 	} else {
-// 		w.Write(templateLayoutByteArray[2])
-// 		w.Write([]byte(me.AccountName))
-// 		w.Write(templateLayoutByteArray[3])
-// 		w.Write([]byte(me.AccountName))
-// 		w.Write(templateLayoutByteArray[4])
-// 		if me.Authority == 1 {
-// 			w.Write(templateLayoutByteArray[5])
-// 		}
-// 		w.Write(templateLayoutByteArray[6])
-// 	}
-// 	w.Write(templateLayoutByteArray[7])
-// 	content(w)
-// 	w.Write(templateLayoutByteArray[8])
-// }
+func templateLayout(w http.ResponseWriter, me User, content func(w http.ResponseWriter)) {
+	w.Write(templateLayoutByteArray[0])
+	if me.ID == 0 {
+		w.Write(templateLayoutByteArray[1])
+	} else {
+		w.Write(templateLayoutByteArray[2])
+		w.Write([]byte(me.AccountName))
+		w.Write(templateLayoutByteArray[3])
+		w.Write([]byte(me.AccountName))
+		w.Write(templateLayoutByteArray[4])
+		if me.Authority == 1 {
+			w.Write(templateLayoutByteArray[5])
+		}
+		w.Write(templateLayoutByteArray[6])
+	}
+	w.Write(templateLayoutByteArray[7])
+	content(w)
+	w.Write(templateLayoutByteArray[8])
+}
 
-// func templateIndex (w
-// 	// {{ define "content" }},
-// []byte(`<div class="isu-submit"><form method="post" action="/" enctype="multipart/form-data"><div class="isu-form"><input type="file" name="file" value="file"></div><div class="isu-form"><textarea name="body"></textarea></div><div class="form-submit"><input type="hidden" name="csrf_token" value="`),
-// // {{.CSRFToken}},
-// []byte(`"><input type="submit" name="submit" value="submit"></div>`),
-// // {{if .Flash}},
-// []byte(`<div id="notice-message" class="alert alert-danger">`),
-// // {{.Flash}},
-// []byte(`</div>`),
-// // {{end}},
-// []byte(`</form></div>`),
-// // {{ template "posts.html" .Posts }},
-// []byte(`<div id="isu-post-more"><button id="isu-post-more-btn">もっと見る</button><img class="isu-loading-icon" src="/img/ajax-loader.gif"></div>`),
-// // {{ end }},
-// )
+var templatePostByteArray = [...][]byte{
+	[]byte(`<div class="isu-post" id="pid_`), //[0]
+	// {{ .ID }}
+	[]byte(`" data-created-at="`), // [1]
+	// {{.CreatedAt.Format "2006-01-02T15:04:05-07:00"}}
+	[]byte(`"><div class="isu-post-header"><a href="/@`), // [2]
+	// {{.User.AccountName}}
+	[]byte(`" class="isu-post-account-name">`), // [3]
+	// {{ .User.AccountName }}
+	[]byte(`</a><a href="/posts/`), // [4]
+	// {{.ID}}
+	[]byte(`" class="isu-post-permalink"><time class="timeago" datetime="`), // [5]
+	// {{.CreatedAt.Format "2006-01-02T15:04:05-07:00"}}
+	[]byte(`"></time></a></div><div class="isu-post-image"><img src="`), // [6]
+	// {{imageURL .}}
+	[]byte(`" class="isu-image"></div><div class="isu-post-text"><a href="/@`), // [7]
+	// {{.User.AccountName}}
+	[]byte(`" class="isu-post-account-name">`), // [8]
+	// {{ .User.AccountName }}
+	[]byte(`</a>`), // [9]
+	// {{ .Body }}
+	[]byte(`</div><div class="isu-post-comment"><div class="isu-post-comment-count">comments: <b>`), // [10]
+	// {{ .CommentCount }}
+	[]byte(`</b></div>`), // [11]
+	// {{ range .Comments }}
+	[]byte(`<div class="isu-comment"><a href="/@`), // [12]
+	// {{.User.AccountName}}
+	[]byte(`" class="isu-comment-account-name">`), // [13]
+	// {{.User.AccountName}}
+	[]byte(`</a><span class="isu-comment-text">`), // [14]
+	// {{.Comment}}
+	[]byte(`</span></div>`), // [15]
+	// {{ end }}
+	[]byte(`<div class="isu-comment-form"><form method="post" action="/comment"><input type="text" name="comment"><input type="hidden" name="post_id" value="`), // [16]
+	// {{.ID}}
+	[]byte(`"><input type="hidden" name="csrf_token" value="`), // [17]
+	// {{.CSRFToken}}
+	[]byte(`"><input type="submit" name="submit" value="submit"></form></div></div></div>`), // [18]
+}
+
+func templatePost(w http.ResponseWriter, p Post) {
+	w.Write(templatePostByteArray[0])
+	w.Write([]byte(strconv.Itoa(p.ID)))
+	w.Write(templatePostByteArray[1])
+	w.Write([]byte(p.CreatedAt.Format(ISO8601Format)))
+	w.Write(templatePostByteArray[2])
+	w.Write([]byte(p.User.AccountName))
+	w.Write(templatePostByteArray[3])
+	w.Write([]byte(p.User.AccountName))
+	w.Write(templatePostByteArray[4])
+	w.Write([]byte(strconv.Itoa(p.ID)))
+	w.Write(templatePostByteArray[5])
+	w.Write([]byte(p.CreatedAt.Format(ISO8601Format)))
+	w.Write(templatePostByteArray[6])
+	w.Write([]byte(imageURL(p)))
+	w.Write(templatePostByteArray[7])
+	w.Write([]byte(p.User.AccountName))
+	w.Write(templatePostByteArray[8])
+	w.Write([]byte(p.User.AccountName))
+	w.Write(templatePostByteArray[9])
+	w.Write([]byte(p.Body))
+	w.Write(templatePostByteArray[10])
+	w.Write([]byte(strconv.Itoa(p.CommentCount)))
+	w.Write(templatePostByteArray[11])
+	for _, c := range p.Comments {
+		w.Write(templatePostByteArray[12])
+		w.Write([]byte(c.User.AccountName))
+		w.Write(templatePostByteArray[13])
+		w.Write([]byte(c.User.AccountName))
+		w.Write(templatePostByteArray[14])
+		w.Write([]byte(c.Comment))
+		w.Write(templatePostByteArray[15])
+	}
+	w.Write(templatePostByteArray[16])
+	w.Write([]byte(strconv.Itoa(p.ID)))
+	w.Write(templatePostByteArray[17])
+	w.Write([]byte(p.CSRFToken))
+	w.Write(templatePostByteArray[18])
+}
+
+var templatePostsByteArray = [...][]byte{
+	[]byte(`<div class="isu-posts">`),
+	// {{ range . }}
+	// {{ template "post.html" . }}
+	// {{ end }}
+	[]byte(`</div>`),
+}
+
+func templatePosts(w http.ResponseWriter, posts []Post) {
+	w.Write(templatePostsByteArray[0])
+	for _, p := range posts {
+		templatePost(w, p)
+	}
+	w.Write(templatePostsByteArray[1])
+}
+
+var templateIndexByteArray = [...][]byte{
+	[]byte(`<div class="isu-submit"><form method="post" action="/" enctype="multipart/form-data"><div class="isu-form"><input type="file" name="file" value="file"></div><div class="isu-form"><textarea name="body"></textarea></div><div class="form-submit"><input type="hidden" name="csrf_token" value="`),
+	// {{.CSRFToken}},
+	[]byte(`"><input type="submit" name="submit" value="submit"></div>`),
+	// {{if .Flash}},
+	[]byte(`<div id="notice-message" class="alert alert-danger">`),
+	// {{.Flash}},
+	[]byte(`</div>`),
+	// {{end}},
+	[]byte(`</form></div>`),
+	// {{ template "posts.html" .Posts }},
+	[]byte(`<div id="isu-post-more"><button id="isu-post-more-btn">もっと見る</button><img class="isu-loading-icon" src="/img/ajax-loader.gif"></div>`),
+	// {{ end }},
+}
+
+func templateIndex(w http.ResponseWriter, posts []Post, csrfToken string, flash string) {
+	w.Write(templateIndexByteArray[0])
+	w.Write([]byte(csrfToken))
+	w.Write(templateIndexByteArray[1])
+	if flash != "" {
+		w.Write(templateIndexByteArray[2])
+		w.Write([]byte(flash))
+		w.Write(templateIndexByteArray[3])
+	}
+	w.Write(templateIndexByteArray[4])
+	for _, p := range posts {
+		templatePosts(w, []Post{p})
+	}
+	w.Write(templateIndexByteArray[5])
+}
 
 func tryLogin(accountName, password string) *User {
 	u := User{}
@@ -528,12 +639,16 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	getIndexTemplate.Execute(w, struct {
-		Posts     []Post
-		Me        User
-		CSRFToken string
-		Flash     string
-	}{posts, me, getCSRFToken(r), getFlash(w, r, "notice")})
+	// getIndexTemplate.Execute(w, struct {
+	// 	Posts     []Post
+	// 	Me        User
+	// 	CSRFToken string
+	// 	Flash     string
+	// }{posts, me, getCSRFToken(r), getFlash(w, r, "notice")})
+
+	templateLayout(w, me, func(w http.ResponseWriter) {
+		templateIndex(w, posts, getCSRFToken(r), getFlash(w, r, "notice"))
+	})
 }
 
 func getAccountName(w http.ResponseWriter, r *http.Request) {

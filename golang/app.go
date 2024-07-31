@@ -123,21 +123,7 @@ func validateUser(accountName, password string) bool {
 		regexp.MustCompile(`\A[0-9a-zA-Z_]{6,}\z`).MatchString(password)
 }
 
-// 今回のGo実装では言語側のエスケープの仕組みが使えないのでOSコマンドインジェクション対策できない
-// 取り急ぎPHPのescapeshellarg関数を参考に自前で実装
-// cf: http://jp2.php.net/manual/ja/function.escapeshellarg.php
-func escapeshellarg(arg string) string {
-	return "'" + strings.Replace(arg, "'", "'\\''", -1) + "'"
-}
-
 func digest(src string) string {
-	// opensslのバージョンによっては (stdin)= というのがつくので取る
-	// out, err := exec.Command("/bin/bash", "-c", `printf "%s" `+escapeshellarg(src)+` | openssl dgst -sha512 | sed 's/^.*= //'`).Output()
-	// if err != nil {
-	// 	log.Print(err)
-	// 	return ""
-	// }
-
 	hasher := sha512.New()
 	_, err := hasher.Write([]byte(src))
 	if err != nil {
@@ -751,7 +737,7 @@ func getImage(w http.ResponseWriter, r *http.Request) {
 		// 	log.Print(err)
 		// 	return
 		// }
-		return
+		// return
 	}
 
 	filename := fmt.Sprintf("../public/image/%d.%s", pid, ext)

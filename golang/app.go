@@ -743,7 +743,7 @@ func getImage(w http.ResponseWriter, r *http.Request) {
 	filename := fmt.Sprintf("../public/image/%d.%s", pid, ext)
 	os.WriteFile(filename, post.Imgdata, 0644)
 
-	w.Header().Set("X-Accel-Redirect", filename)
+	w.Header().Set("X-Accel-Redirect", fmt.Sprintf("/image/%d.%s", pid, ext))
 
 	w.WriteHeader(http.StatusNotFound)
 }

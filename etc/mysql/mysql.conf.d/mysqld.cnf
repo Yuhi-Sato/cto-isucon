@@ -76,3 +76,25 @@ log_error = /var/log/mysql/error.log
 max_binlog_size   = 100M
 # binlog_do_db		= include_database_name
 # binlog_ignore_db	= include_database_name
+
+slow_query_log          = 1
+slow_query_log_file     = /var/log/mysql/mysql-slow.log
+long_query_time = 0
+log-queries-not-using-indexes = 1
+
+skip-log-bin
+skip-innodb-doublewrite
+max_allowed_packet = 200M
+max_connections = 5000
+# ディスクイメージをメモリ上にバッファさせる値をきめる設定値 (別鯖なら搭載メモリの80%くらい)
+innodb_buffer_pool_size = 3000MB
+# InnoDBの更新ログを記録するディスク上のファイルサイズ(innodb_buffer_pool_sizeの4分の1程度)
+innodb_log_file_size = 500MB
+# innoDBの更新ログを保持するメモリ(default: 8MB)、大量のデータの更新に効く
+innodb_log_buffer_size = 100MB
+# 1に設定するとトランザクション単位でログを出力するが 2 を指定すると1秒間に1回ログファイルに出力するようになる
+innodb_flush_log_at_trx_commit = 0
+# データファイル、ログファイルの読み書き方式を指定する (OSによるディスクキャッシュとの2重キャッシュを防ぐ)
+innodb_flush_method = O_DIRECT
+# ORDER BYやGROUP BYのときに使われるメモリ量
+innodb_sort_buffer_size = 100MB

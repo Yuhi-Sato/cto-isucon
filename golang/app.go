@@ -30,9 +30,10 @@ import (
 )
 
 var (
-	db    *sqlx.DB
-	store *gsm.MemcacheStore
-	cache *freecache.Cache
+	db               *sqlx.DB
+	store            *gsm.MemcacheStore
+	cache            *freecache.Cache
+	getIndexTemplate *template.Template
 )
 
 const (
@@ -80,6 +81,17 @@ func init() {
 	memcacheClient := memcache.New(memdAddr)
 	store = gsm.NewMemcacheStore(memcacheClient, "iscogram_", []byte("sendagaya"))
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	fmap := template.FuncMap{
+		"imageURL": imageURL,
+	}
+
+	getIndexTemplate = template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
+		getTemplPath("layout.html"),
+		getTemplPath("index.html"),
+		getTemplPath("posts.html"),
+		getTemplPath("post.html"),
+	))
 }
 
 func dbInitialize() {
@@ -103,6 +115,62 @@ func dbInitialize() {
 		db.Exec(sql)
 	}
 }
+
+// var templateLayoutByteArray = [...][]byte{
+// 	[]byte(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Iscogram</title><link href="/css/style.css" media="screen" rel="stylesheet" type="text/css"></head><body><div class="container"><div class="header"><div class="isu-title"><h1><a href="/">Iscogram</a></h1></div><div class="isu-header-menu">`),
+// 	// {{ if eq .Me.ID 0}}
+// 	[]byte(`(<div><a href="/login">ログイン</a></div>`),
+// 	// {{ else }}
+// 	[]byte(`<div><a href="/@`),
+// 	// {{.Me.AccountName}}
+// 	[]byte(`"><span class="isu-account-name">`),
+// 	// {{.Me.AccountName}}
+// 	[]byte(`</span>さん</a></div>`),
+// 	// {{ if eq .Me.Authority 1 }}
+// 	[]byte(`<div><a href="/admin/banned">管理者用ページ</a></div>`),
+// 	// {{ end }}
+// 	[]byte(`<div><a href="/logout">ログアウト</a></div>`),
+// 	// {{ end }}
+// 	[]byte(`</div></div>`),
+// 	// {{ template "content" . }}
+// 	[]byte(`</div><script src="/js/timeago.min.js"></script><script src="/js/main.js"></script></body></html>`),
+// }
+
+// func templateLayout(w http.ResponseWriter, me User, content func(w http.ResponseWriter)) {
+// 	w.Write(templateLayoutByteArray[0])
+// 	if me.ID == 0 {
+// 		w.Write(templateLayoutByteArray[1])
+// 	} else {
+// 		w.Write(templateLayoutByteArray[2])
+// 		w.Write([]byte(me.AccountName))
+// 		w.Write(templateLayoutByteArray[3])
+// 		w.Write([]byte(me.AccountName))
+// 		w.Write(templateLayoutByteArray[4])
+// 		if me.Authority == 1 {
+// 			w.Write(templateLayoutByteArray[5])
+// 		}
+// 		w.Write(templateLayoutByteArray[6])
+// 	}
+// 	w.Write(templateLayoutByteArray[7])
+// 	content(w)
+// 	w.Write(templateLayoutByteArray[8])
+// }
+
+// func templateIndex (w
+// 	// {{ define "content" }},
+// []byte(`<div class="isu-submit"><form method="post" action="/" enctype="multipart/form-data"><div class="isu-form"><input type="file" name="file" value="file"></div><div class="isu-form"><textarea name="body"></textarea></div><div class="form-submit"><input type="hidden" name="csrf_token" value="`),
+// // {{.CSRFToken}},
+// []byte(`"><input type="submit" name="submit" value="submit"></div>`),
+// // {{if .Flash}},
+// []byte(`<div id="notice-message" class="alert alert-danger">`),
+// // {{.Flash}},
+// []byte(`</div>`),
+// // {{end}},
+// []byte(`</form></div>`),
+// // {{ template "posts.html" .Posts }},
+// []byte(`<div id="isu-post-more"><button id="isu-post-more-btn">もっと見る</button><img class="isu-loading-icon" src="/img/ajax-loader.gif"></div>`),
+// // {{ end }},
+// )
 
 func tryLogin(accountName, password string) *User {
 	u := User{}
@@ -449,16 +517,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmap := template.FuncMap{
-		"imageURL": imageURL,
-	}
-
-	template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("index.html"),
-		getTemplPath("posts.html"),
-		getTemplPath("post.html"),
-	)).Execute(w, struct {
+	getIndexTemplate.Execute(w, struct {
 		Posts     []Post
 		Me        User
 		CSRFToken string

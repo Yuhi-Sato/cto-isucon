@@ -649,6 +649,33 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+var templateAccountByteArray = [...][]byte{
+	[]byte(`<div class="isu-user"><div><span class="isu-user-account-name">`), // [0]
+	// {{ .User.AccountName }}
+	[]byte(`さん</span>のページ</div><div>投稿数 <span class="isu-post-count">`), // [1]
+	// {{ .PostCount }}
+	[]byte(`</span></div><div>コメント数 <span class="isu-comment-count">`), // [2]
+	// {{ .CommentCount }}
+	[]byte(`</span></div><div>被コメント数 <span class="isu-commented-count">`), // [3]
+	// {{ .CommentedCount }}
+	[]byte(`</span></div></div>`), // [4]
+	// {{ template "posts.html" .Posts }}
+	// {{ end }}
+}
+
+func templateAccountName(w http.ResponseWriter, user User, postCount, commentCount, commentedCount int, posts []Post) {
+	w.Write(templateAccountByteArray[0])
+	w.Write([]byte(user.AccountName))
+	w.Write(templateAccountByteArray[1])
+	w.Write([]byte(strconv.Itoa(postCount)))
+	w.Write(templateAccountByteArray[2])
+	w.Write([]byte(strconv.Itoa(commentCount)))
+	w.Write(templateAccountByteArray[3])
+	w.Write([]byte(strconv.Itoa(commentedCount)))
+	w.Write(templateAccountByteArray[4])
+	templatePosts(w, posts)
+}
+
 func getAccountName(w http.ResponseWriter, r *http.Request) {
 	accountName := r.PathValue("accountName")
 	user := User{}
@@ -731,23 +758,9 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 
 	me := getSessionUser(r)
 
-	fmap := template.FuncMap{
-		"imageURL": imageURL,
-	}
-
-	template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("user.html"),
-		getTemplPath("posts.html"),
-		getTemplPath("post.html"),
-	)).Execute(w, struct {
-		Posts          []Post
-		User           User
-		PostCount      int
-		CommentCount   int
-		CommentedCount int
-		Me             User
-	}{posts, user, postCount, commentCount, commentedCount, me})
+	templateLayout(w, me, func(w http.ResponseWriter) {
+		templateAccountName(w, user, postCount, commentCount, commentedCount, posts)
+	})
 }
 
 func getPosts(w http.ResponseWriter, r *http.Request) {

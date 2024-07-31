@@ -2,6 +2,7 @@ package main
 
 import (
 	crand "crypto/rand"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -65,7 +66,7 @@ type Comment struct {
 	UserID    int       `db:"user_id"`
 	Comment   string    `db:"comment"`
 	CreatedAt time.Time `db:"created_at"`
-	User      User
+	User      User      `db:"users"`
 }
 
 func init() {
@@ -200,22 +201,39 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 			}
 		}
 
-		query := "SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC"
-		if !allComments {
-			query += " LIMIT 3"
-		}
+		cacheCommentsKey := fmt.Sprintf("comments_%d_%t", p.ID, allComments)
 		var comments []Comment
-		err = db.Select(&comments, query, p.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < len(comments); i++ {
-			err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ?", comments[i].UserID)
+		b, err = cache.Get([]byte(cacheCommentsKey))
+		if err == nil {
+			err = json.Unmarshal(b, &comments)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			query := "SELECT c.`id`, c.`post_id`, c.`user_id`, c.`comment`, c.`created_at`, u.`account_name` AS \"user.account_name\" FROM `comments` AS c STRAIGHT_JOIN `users` AS u ON c.`user_id` = u.`id` WHERE c.`post_id` = ? ORDER BY c.`created_at` DESC"
+			if !allComments {
+				query += " LIMIT 3"
+			}
+			err = db.Select(&comments, query, p.ID)
+			if err != nil {
+				return nil, err
+			}
+			b, err = json.Marshal(comments)
+			if err != nil {
+				return nil, err
+			}
+			err = cache.Set([]byte(cacheCommentsKey), b, 86400)
 			if err != nil {
 				return nil, err
 			}
 		}
+
+		// for i := 0; i < len(comments); i++ {
+		// 	err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ?", comments[i].UserID)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// }
 
 		// reverse
 		for i, j := 0, len(comments)-1; i < j; i, j = i+1, j-1 {

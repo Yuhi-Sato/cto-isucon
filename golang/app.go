@@ -4,7 +4,6 @@ import (
 	crand "crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -22,6 +21,7 @@ import (
 
 	"github.com/bradfitz/gomemcache/memcache"
 	gsm "github.com/bradleypeabody/gorilla-sessions-memcache"
+	"github.com/bytedance/sonic"
 	"github.com/coocood/freecache"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/go-sql-driver/mysql"
@@ -177,7 +177,7 @@ func tryLogin(accountName, password string) *User {
 	cacheUserKey := fmt.Sprintf("user_%s", accountName)
 	b, err := cache.Get([]byte(cacheUserKey))
 	if err == nil {
-		err = json.Unmarshal(b, &u)
+		err = sonic.Unmarshal(b, &u)
 		if err != nil {
 			log.Print(err)
 			return nil
@@ -188,7 +188,7 @@ func tryLogin(accountName, password string) *User {
 			return nil
 		}
 
-		b, err = json.Marshal(u)
+		b, err = sonic.Marshal(u)
 		if err != nil {
 			log.Print(err)
 			return nil
@@ -290,7 +290,7 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		var comments []Comment
 		b, err = cache.Get([]byte(cacheCommentsKey))
 		if err == nil {
-			err = json.Unmarshal(b, &comments)
+			err = sonic.Unmarshal(b, &comments)
 			if err != nil {
 				return nil, err
 			}
@@ -303,7 +303,7 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 			if err != nil {
 				return nil, err
 			}
-			b, err = json.Marshal(comments)
+			b, err = sonic.Marshal(comments)
 			if err != nil {
 				return nil, err
 			}
@@ -531,7 +531,7 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 	cacheUserKey := fmt.Sprintf("user_%s", accountName)
 	b, err := cache.Get([]byte(cacheUserKey))
 	if err == nil {
-		err = json.Unmarshal(b, &user)
+		err = sonic.Unmarshal(b, &user)
 		if err != nil {
 			log.Print(err)
 			return
@@ -542,7 +542,7 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 			log.Print(err)
 			return
 		}
-		b, err = json.Marshal(user)
+		b, err = sonic.Marshal(user)
 		if err != nil {
 			log.Print(err)
 			return

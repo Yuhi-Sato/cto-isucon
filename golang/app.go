@@ -130,7 +130,7 @@ func dbInitialize() {
 var templateLayoutByteArray = [...][]byte{
 	[]byte(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Iscogram</title><link href="/css/style.css" media="screen" rel="stylesheet" type="text/css"></head><body><div class="container"><div class="header"><div class="isu-title"><h1><a href="/">Iscogram</a></h1></div><div class="isu-header-menu">`),
 	// {{ if eq .Me.ID 0}}
-	[]byte(`(<div><a href="/login">ログイン</a></div>`),
+	[]byte(`<div><a href="/login">ログイン</a></div>`),
 	// {{ else }}
 	[]byte(`<div><a href="/@`),
 	// {{.Me.AccountName}}

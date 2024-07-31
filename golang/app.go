@@ -34,7 +34,7 @@ var (
 	store *gsm.MemcacheStore
 	cache *freecache.Cache
 	// getIndexTemplate   *template.Template
-	getPostsIDTemplate *template.Template
+	// getPostsIDTemplate *template.Template
 	// getPostsTemplate   *template.Template
 )
 
@@ -84,9 +84,9 @@ func init() {
 	store = gsm.NewMemcacheStore(memcacheClient, "iscogram_", []byte("sendagaya"))
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	fmap := template.FuncMap{
-		"imageURL": imageURL,
-	}
+	// fmap := template.FuncMap{
+	// 	"imageURL": imageURL,
+	// }
 
 	// getIndexTemplate = template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
 	// 	getTemplPath("layout.html"),
@@ -94,11 +94,11 @@ func init() {
 	// 	getTemplPath("posts.html"),
 	// 	getTemplPath("post.html"),
 	// ))
-	getPostsIDTemplate = template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("post_id.html"),
-		getTemplPath("post.html"),
-	))
+	// getPostsIDTemplate = template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
+	// 	getTemplPath("layout.html"),
+	// 	getTemplPath("post_id.html"),
+	// 	getTemplPath("post.html"),
+	// ))
 	// getPostsTemplate = template.Must(template.New("posts.html").Funcs(fmap).ParseFiles(
 	// 	getTemplPath("posts.html"),
 	// 	getTemplPath("post.html"),
@@ -838,10 +838,9 @@ func getPostsID(w http.ResponseWriter, r *http.Request) {
 
 	me := getSessionUser(r)
 
-	getPostsIDTemplate.Execute(w, struct {
-		Post Post
-		Me   User
-	}{p, me})
+	templateLayout(w, me, func(w http.ResponseWriter) {
+		templatePost(w, p)
+	})
 }
 
 func postIndex(w http.ResponseWriter, r *http.Request) {
